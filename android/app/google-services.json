@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "205040157",
+    "firebase_url": "https://ekobek-default-rtdb.firebaseio.com",
+    "project_id": "ekobek",
+    "storage_bucket": "ekobek.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:205040157:android:5c4b3f1ed6730f850234f4",
+        "android_client_info": {
+          "package_name": "com.example.ekobek"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1Wwmn_a2TswEifd_dAWHM6UmlGc9hAqA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

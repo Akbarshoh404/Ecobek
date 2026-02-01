@@ -1,0 +1,143 @@
+{
+  "messages": {
+    "-N123abc456": {
+      "senderId": "Guest6789",
+      "text": "Bu chat real vaqtda yangilanayaptimi hammaga?",
+      "timestamp": 1737987800000
+    },
+    "-N345ghi678": {
+      "senderId": "Guest8912",
+      "text": "Ajoyib! Keyingi qadam nima bo‘ladi?",
+      "timestamp": 1737987856789
+    },
+    "-N789def012": {
+      "senderId": "Guest4721",
+      "text": "Ha, StreamBuilder bilan real-time yangilanmoqda",
+      "timestamp": 1737987823456
+    },
+    "-N901jkl234": {
+      "senderId": "Guest3054",
+      "text": "Endi user nomini o‘zgartirish va emoji qo‘shish qo‘shamiz deb o‘ylayman",
+      "timestamp": 1737987880123
+    },
+    "-Nabc123xyz": {
+      "senderId": "Guest4721",
+      "text": "Salom hammaga! Bugun qanday kayfiyatdasiz?",
+      "timestamp": 1737987654321
+    },
+    "-Ndef456uvw": {
+      "senderId": "Guest8912",
+      "text": "Zo‘r! Toshkentda ob-havo ajoyib bo‘ldi bugun ☀️",
+      "timestamp": 1737987678901
+    },
+    "-Nghi789rst": {
+      "senderId": "Guest3054",
+      "text": "Kimdir yangi loyiha haqida gapirib bersa yaxshi bo‘lardi",
+      "timestamp": 1737987701234
+    },
+    "-Njkl012mno": {
+      "senderId": "Guest4721",
+      "text": "Flutter + Firebase bilan chat app yasayapmiz hozir 😄",
+      "timestamp": 1737987724567
+    },
+    "-Nopq345stu": {
+      "senderId": "Guest8912",
+      "text": "Qaysi paketlar kerak bo‘ldi? firebase_database ham qo‘shdingizmi?",
+      "timestamp": 1737987748900
+    },
+    "-Nvwx678yz0": {
+      "senderId": "Guest3054",
+      "text": "Ha albatta, firebase_database ^11.1.4 ishlatyapmiz",
+      "timestamp": 1737987772345
+    },
+    "-OjygPe3MlEOGloK62AB": {
+      "senderId": "Guest5054",
+      "text": "asdasdasdasd",
+      "timestamp": 1769504615682
+    },
+    "-Ojygc75WPLSycCYm-tA": {
+      "senderId": "Guest3599",
+      "text": "asdasdasda",
+      "timestamp": 1769504670821
+    },
+    "-Ok9VlDvlbzYj5CxFcDs": {
+      "senderId": "Guest9090",
+      "text": "djdjfjjdksksls",
+      "timestamp": 1769702889671
+    },
+    "-Ok9VlzDEl4TThygacpS": {
+      "senderId": "Guest9090",
+      "text": "oo",
+      "timestamp": 1769702892760
+    },
+    "-Ok9VmoMqaORb-enGO3l": {
+      "senderId": "Guest9090",
+      "text": "nifiga",
+      "timestamp": 1769702896166
+    },
+    "-Ok9Vnz7e7f8N0XG4y29": {
+      "senderId": "Guest9090",
+      "text": "teknologia",
+      "timestamp": 1769702900945
+    }
+  },
+
+  "waste_items": {
+    "steel": {
+      "img": "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=800",
+      "name": "Steel Scrap",
+      "price": "845",
+      "unit": "Kg",
+      "type": "Metal"
+    },
+    "newspaper": {
+      "img": "https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=800",
+      "name": "Old Newspapers",
+      "price": "45",
+      "unit": "Kg",
+      "type": "Paper"
+    },
+    "laptop": {
+      "img": "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?w=800",
+      "name": "Broken Laptop",
+      "price": "15",
+      "unit": "Kg",
+      "type": "Electronic"
+    },
+    "hard_plastic": {
+      "img": "https://images.unsplash.com/photo-1582407947304-fd1a5c10176c?w=800",
+      "name": "Hard Plastic Bottles",
+      "price": "19",
+      "unit": "Kg",
+      "type": "Plastic"
+    },
+    "copper": {
+      "img": "https://images.unsplash.com/photo-1617791160505-6f00504e3519?w=800",
+      "name": "Copper Wire",
+      "price": "246",
+      "unit": "Kg",
+      "type": "Metal"
+    },
+    "glass": {
+      "img": "https://images.unsplash.com/photo-1625164286258-2c25b2e2e8b5?w=800",
+      "name": "Glass Bottles",
+      "price": "12",
+      "unit": "Kg",
+      "type": "Glass"
+    },
+    "oil_tin": {
+      "img": "https://images.unsplash.com/photo-1581092160560-1c1e428e9d65?w=800",
+      "name": "Used Oil Tin",
+      "price": "32",
+      "unit": "Kg",
+      "type": "Metal"
+    },
+    "old_phones": {
+      "img": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=800",
+      "name": "Old Smartphones",
+      "price": "28",
+      "unit": "Kg",
+      "type": "Electronic"
+    }
+  }
+}
