@@ -1,8 +1,10 @@
+import 'dart:convert';
 import 'dart:io';
-
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
-import 'package:google_mlkit_image_labeling/google_mlkit_image_labeling.dart';
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:googleapis/vision/v1.dart' as vision;
+import 'package:googleapis_auth/auth_io.dart';
 
 class ScannerScreen extends StatefulWidget {
   const ScannerScreen({super.key});
@@ -17,67 +19,140 @@ class _ScannerScreenState extends State<ScannerScreen> {
   String _resultText = '';
   bool _isRecyclable = false;
   File? _capturedImage;
+  String _detectedObject = 'Scan an item...';
+  bool _isProcessing = false;
 
-  final ImageLabeler _labeler = ImageLabeler(options: ImageLabelerOptions());
 
   final Set<String> _recyclableKeywords = {
-    'plastic', 'paper', 'glass', 'metal', 'cardboard', 'aluminum', 'tin',
-    'bottle', 'can', 'recyclable', 'recycling', 'package', 'container'
+    'plastic', 'bottle', 'can', 'paper', 'cardboard', 'glass', 'metal', 'aluminum', 'tin', 
+    'container', 'recyclable', 'carton', 'box', 'jug', 'wrapper', 'bag', 'polyethylene', 
+    'polystyrene', 'pet', 'hdpe', 'steel', 'scrap'
   };
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeVision();
+  }
+
+  Future<void> _initializeVision() async {
+    // No explicit initialization needed for googleapis, but we can validate credentials exist
+    try {
+      await rootBundle.loadString('lib/assets/service_credentials.json');
+    } catch (e) {
+      debugPrint('Error finding service credentials: $e');
+    }
+  }
 
   Future<void> _openCamera() async {
     try {
       final cameras = await availableCameras();
       if (cameras.isEmpty) return;
-
       _controller = CameraController(cameras[0], ResolutionPreset.high);
       await _controller!.initialize();
-
       if (!mounted) return;
-
-      setState(() => _isCameraOpen = true);
+      setState(() {
+        _isCameraOpen = true;
+        _capturedImage = null;
+        _resultText = '';
+        _detectedObject = 'Unknown';
+      });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Camera error: $e')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Camera error: $e')));
     }
   }
 
   Future<void> _scanAndProcess() async {
-    if (_controller == null || !_controller!.value.isInitialized) return;
+    if (_controller == null || !_controller!.value.isInitialized || _isProcessing) return;
 
+    setState(() {
+      _isProcessing = true;
+    });
+
+    AutoRefreshingAuthClient? client;
     try {
       final XFile pic = await _controller!.takePicture();
       final imageFile = File(pic.path);
+      
+      String detected = 'Unknown';
+      bool recyclable = false;
 
-      final inputImage = InputImage.fromFilePath(pic.path);
-      final labels = await _labeler.processImage(inputImage);
+      // Load Service Account Credentials
+      final jsonString = await rootBundle.loadString('lib/assets/service_credentials.json');
+      final credentials = ServiceAccountCredentials.fromJson(jsonString);
+      
+      // Get Authenticated Client
+      client = await clientViaServiceAccount(credentials, [vision.VisionApi.cloudPlatformScope]);
+      final visionApi = vision.VisionApi(client);
 
-      bool recyclable = labels.any((label) =>
-          _recyclableKeywords.any((kw) => label.label.toLowerCase().contains(kw)));
+      final bytes = await imageFile.readAsBytes();
+      final base64Image = base64Encode(bytes);
+
+      final request = vision.AnnotateImageRequest(
+        image: vision.Image(content: base64Image),
+        features: [
+          vision.Feature(maxResults: 10, type: 'LABEL_DETECTION'),
+          vision.Feature(maxResults: 5, type: 'OBJECT_LOCALIZATION'),
+        ],
+      );
+
+      final batchRequest = vision.BatchAnnotateImagesRequest(requests: [request]);
+      final batchResponse = await visionApi.images.annotate(batchRequest);
+
+      if (batchResponse.responses != null && batchResponse.responses!.isNotEmpty) {
+        final response = batchResponse.responses!.first;
+        
+        // Prioritize object localization if available, otherwise labels
+        if (response.localizedObjectAnnotations != null && response.localizedObjectAnnotations!.isNotEmpty) {
+           detected = response.localizedObjectAnnotations!.first.name ?? 'Unknown Object';
+        } else if (response.labelAnnotations != null && response.labelAnnotations!.isNotEmpty) {
+           detected = response.labelAnnotations!.first.description ?? 'Unknown Label';
+        }
+         
+        // Check recyclability against all labels found
+        final allLabels = <String>[];
+        if (response.localizedObjectAnnotations != null) {
+          allLabels.addAll(response.localizedObjectAnnotations!.map((e) => e.name ?? '').where((s) => s.isNotEmpty));
+        }
+        if (response.labelAnnotations != null) {
+          allLabels.addAll(response.labelAnnotations!.map((e) => e.description ?? '').where((s) => s.isNotEmpty));
+        }
+        
+        recyclable = allLabels.any((label) =>
+            _recyclableKeywords.any((kw) => label.toLowerCase().contains(kw)));
+      } else {
+        detected = "No response from Vision API";
+      }
 
       setState(() {
         _capturedImage = imageFile;
+        _detectedObject = detected;
         _isRecyclable = recyclable;
-        _resultText = recyclable ? "It's Recyclable" : "Not Recyclable";
-        _isCameraOpen = false; // exit camera
+        _resultText = recyclable ? "Recyclable" : "Not Recyclable";
+        _isCameraOpen = false;
       });
 
-      // Optional: clean up controller
       await _controller?.dispose();
       _controller = null;
     } catch (e) {
+      debugPrint('Scan error: $e');
       setState(() {
-        _resultText = "Error during scan";
+        _resultText = "Scan error";
         _isCameraOpen = false;
       });
+    } finally {
+      client?.close();
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
     }
   }
 
   @override
   void dispose() {
     _controller?.dispose();
-    _labeler.close();
     super.dispose();
   }
 
@@ -88,10 +163,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         body: Stack(
           fit: StackFit.expand,
           children: [
-            if (_controller != null && _controller!.value.isInitialized)
-              CameraPreview(_controller!),
-
-            // Scan frame
+            if (_controller != null && _controller!.value.isInitialized) CameraPreview(_controller!),
             Center(
               child: Container(
                 width: 280,
@@ -102,8 +174,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 ),
               ),
             ),
-
-            // Close button
             Positioned(
               top: 48,
               left: 16,
@@ -116,19 +186,19 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 },
               ),
             ),
-
-            // Scan button
             Positioned(
               bottom: 60,
               left: 0,
               right: 0,
               child: Center(
-                child: FloatingActionButton.extended(
-                  backgroundColor: const Color(0xFF4CAF50),
-                  icon: const Icon(Icons.camera_alt, color: Colors.white),
-                  label: const Text('Scan', style: TextStyle(color: Colors.white)),
-                  onPressed: _scanAndProcess,
-                ),
+                child: _isProcessing 
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : FloatingActionButton.extended(
+                      backgroundColor: const Color(0xFF4CAF50),
+                      icon: const Icon(Icons.camera_alt, color: Colors.white),
+                      label: const Text('Scan', style: TextStyle(color: Colors.white)),
+                      onPressed: _scanAndProcess,
+                    ),
               ),
             ),
           ],
@@ -136,7 +206,6 @@ class _ScannerScreenState extends State<ScannerScreen> {
       );
     }
 
-    // Result screen (after scan or initial state)
     return Scaffold(
       backgroundColor: const Color(0xFFE8F5E9),
       appBar: AppBar(
@@ -144,10 +213,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
         backgroundColor: const Color(0xFFE8F5E9),
         foregroundColor: Colors.black87,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        leading: IconButton(icon: const Icon(Icons.arrow_back), onPressed: () => Navigator.pop(context)),
       ),
       body: Padding(
         padding: const EdgeInsets.all(24.0),
@@ -155,46 +221,28 @@ class _ScannerScreenState extends State<ScannerScreen> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 20),
-
             if (_capturedImage != null)
               ClipRRect(
                 borderRadius: BorderRadius.circular(16),
-                child: Image.file(
-                  _capturedImage!,
-                  height: 320,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                ),
+                child: Image.file(_capturedImage!, height: 320, width: double.infinity, fit: BoxFit.cover),
               )
             else
               Container(
                 height: 320,
                 width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(16)),
                 child: const Icon(Icons.image_not_supported, size: 120, color: Colors.grey),
               ),
-
             const SizedBox(height: 24),
-
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(30),
-              ),
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(30)),
               child: Text(
-                _capturedImage != null
-                    ? (_isRecyclable ? 'Plastic bottle' : 'Unknown item') // can be improved with label
-                    : 'No scan yet',
+                _detectedObject,
                 style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
             ),
-
             const SizedBox(height: 16),
-
             Text(
               _resultText.isEmpty ? 'Scan something...' : _resultText,
               style: TextStyle(
@@ -203,9 +251,7 @@ class _ScannerScreenState extends State<ScannerScreen> {
                 color: _isRecyclable ? const Color(0xFF4CAF50) : Colors.redAccent,
               ),
             ),
-
             const Spacer(),
-
             if (_capturedImage != null)
               SizedBox(
                 width: double.infinity,
@@ -216,16 +262,10 @@ class _ScannerScreenState extends State<ScannerScreen> {
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                   ),
-                  onPressed: () {
-                    // TODO: opens eco news screen
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Opening map...')),
-                    );
-                  },
+                  onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opening map...'))),
                   child: const Text('Show Container in Map', style: TextStyle(fontSize: 18)),
                 ),
               ),
-
             const SizedBox(height: 32),
           ],
         ),

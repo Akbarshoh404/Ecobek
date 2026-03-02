@@ -1,3 +1,4 @@
+import 'package:ekobek/screens/sell_waste_screen.dart';
 import 'package:flutter/material.dart';
 import 'SignIn.dart';
 import 'SignUp.dart';

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ekobek/screens/profile/userProfile.dart';
 import '../screens/sell_waste_screen.dart';
 
-import '../widgets/custom_floating_nav_bar.dart'; // make sure this is correct
+import '../widgets/custom_floating_nav_bar.dart' hide CustomFloatingNavBar; // make sure this is correct
 
 class HomeShell extends StatefulWidget {
   const HomeShell({super.key});

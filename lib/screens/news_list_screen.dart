@@ -1,4 +1,4 @@
-import 'package:ekobek/screens/sell_waste_screen.dart';
+import 'package:ekobek/screens/sell_waste_screen.dart' hide CustomFloatingNavBar;
 import 'package:flutter/material.dart';
 import 'package:firebase_database/firebase_database.dart';
 import '../models/news_model.dart';
